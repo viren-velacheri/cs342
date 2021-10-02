@@ -6,7 +6,11 @@ class CNNClassifier(torch.nn.Module):
         """
         Your code here
         """
-        raise NotImplementedError('CNNClassifier.__init__')
+        super().__init__()
+        input_channels = 3
+        num_classes = 6
+        self.conv = torch.nn.Conv2d(input_channels, 16, 7, 2, 3)
+        self.cls = torch.nn.Linear(16, num_classes)
 
     def forward(self, x):
         """
@@ -14,7 +18,10 @@ class CNNClassifier(torch.nn.Module):
         @x: torch.Tensor((B,3,64,64))
         @return: torch.Tensor((B,6))
         """
-        raise NotImplementedError('CNNClassifier.forward')
+        x = self.conv(x)
+        # Global Pooling
+        x = x.mean(dim=(2,3))
+        return self.cls(x)
 
 
 def save_model(model):
