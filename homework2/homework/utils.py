@@ -2,6 +2,7 @@ from PIL import Image
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+import csv
 
 LABEL_NAMES = ['background', 'kart', 'pickup', 'nitro', 'bomb', 'projectile']
 
@@ -14,20 +15,23 @@ class SuperTuxDataset(Dataset):
         Your code here
         Hint: Use your solution (or the master solution) to HW1
         """
-        raise NotImplementedError('SuperTuxDataset.__init__')
+
+        transformation = transforms.ToTensor()
+        labels_csv_path = dataset_path + "/labels.csv"
+        with open(labels_csv_path, newline='') as csvfile:
+          dictReader = csv.DictReader(csvfile)
+          self.image_labels = list()
+          for row in dictReader:
+            image_file_path = dataset_path + "/" + row['file']
+            img = Image.open(image_file_path)
+            self.image_labels.append((transformation(img), LABEL_NAMES.index(row['label'])))
 
     def __len__(self):
-        """
-        Your code here
-        """
-        raise NotImplementedError('SuperTuxDataset.__len__')
+      return len(self.image_labels)
+
 
     def __getitem__(self, idx):
-        """
-        Your code here
-        return a tuple: img, label
-        """
-        raise NotImplementedError('SuperTuxDataset.__getitem__')
+      return self.image_labels[idx]
 
 
 def load_data(dataset_path, num_workers=0, batch_size=128):

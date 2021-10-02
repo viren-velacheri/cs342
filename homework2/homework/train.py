@@ -2,6 +2,7 @@ from .models import CNNClassifier, save_model
 from .utils import accuracy, load_data
 import torch
 import torch.utils.tensorboard as tb
+from tqdm.notebook import tqdm
 
 
 def train(args):
@@ -16,6 +17,34 @@ def train(args):
     Your code here, modify your HW1 code
     
     """
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = CNNClassifier()
+    model.to(device)
+    dataset_path = "data/train"
+    dataset = load_data(dataset_path)
+    global_step = 0
+    loss_function = torch.nn.CrossEntropyLoss()
+    lr = 0.001
+    epochs = 50
+    # momentum = args.momentum
+    # weight_decay = args.weight_decay
+    # optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    for epoch in tqdm(range(epochs)):
+        model.train()
+        for x, y in dataset:
+            x = x.to(device)
+            y = y.to(device)
+            output = model(x)
+            loss = loss_function(output, y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # train_logger.add_scalar('loss', loss, global_step=global_step)
+            global_step += 1
+
+        model.eval()
 
     save_model(model)
 
