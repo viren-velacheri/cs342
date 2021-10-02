@@ -16,17 +16,17 @@ class ClassificationLoss(torch.nn.Module):
 
         Hint: Don't be too fancy, this is a one-liner
         """
-        return torch.nn.CrossEntropyLoss(input, target)
+        raise NotImplementedError('ClassificationLoss.forward')
 
 
 class LinearClassifier(torch.nn.Module):
-    def __init__(self, input_dim, output_dim):
+    def __init__(self):
         super().__init__()
-        self.linear = torch.nn.Linear(input_dim, output_dim)
 
         """
         Your code here
         """
+        raise NotImplementedError('LinearClassifier.__init__')
 
     def forward(self, x):
         """
@@ -35,13 +35,18 @@ class LinearClassifier(torch.nn.Module):
         @x: torch.Tensor((B,3,64,64))
         @return: torch.Tensor((B,6))
         """
-        return self.linear(x.view(x.shape[0], -1))
+        raise NotImplementedError('LinearClassifier.forward')
 
 
 class MLPClassifier(torch.nn.Module):
-    def __init__(self, input_dim, hidden_size):
+    def __init__(self):
         super().__init__()
-        self.linear = torch.nn.Sequential(torch.nn.Linear(input_dim, hidden_size), torch.nn.ReLU(), torch.nn.Linear(hidden_size, output_dim))
+
+        """
+        Your code here
+        """
+        raise NotImplementedError('MLPClassifier.__init__')
+
     def forward(self, x):
         """
         Your code here
@@ -49,7 +54,7 @@ class MLPClassifier(torch.nn.Module):
         @x: torch.Tensor((B,3,64,64))
         @return: torch.Tensor((B,6))
         """
-        return self.linear(x.view(x.shape[0], -1))
+        raise NotImplementedError('MLPClassifier.forward')
 
 
 model_factory = {
