@@ -3,9 +3,6 @@ import torch
 
 class CNNClassifier(torch.nn.Module):
     def __init__(self):
-        """
-        Your code here
-        """
         super().__init__()
         input_channels = 3
         num_classes = 6
@@ -17,8 +14,6 @@ class CNNClassifier(torch.nn.Module):
             torch.nn.Flatten(),
             torch.nn.Linear(2048, num_classes)
         )
-        # self.conv = torch.nn.Conv2d(input_channels, 16, 7, 2, 3)
-        # self.cls = torch.nn.Linear(16, num_classes)
     def __block(self, in_dim, out_dim, extra=(3, 1, 1), pool=(2, 2)):
       return torch.nn.Sequential(
           torch.nn.Conv2d(in_dim, out_dim, *extra),
@@ -32,10 +27,6 @@ class CNNClassifier(torch.nn.Module):
         @x: torch.Tensor((B,3,64,64))
         @return: torch.Tensor((B,6))
         """
-        # x = self.conv(x)
-        # # Global Pooling
-        # x = x.mean(dim=(2,3))
-        # return self.cls(x)
         return self.layers(x)
 
 

@@ -26,9 +26,6 @@ def train(args):
     loss_function = torch.nn.CrossEntropyLoss()
     lr = 0.001
     epochs = 50
-    # momentum = args.momentum
-    # weight_decay = args.weight_decay
-    # optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     for epoch in tqdm(range(epochs)):
         model.train()
@@ -40,12 +37,8 @@ def train(args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            # train_logger.add_scalar('loss', loss, global_step=global_step)
             global_step += 1
-
         model.eval()
-
     save_model(model)
 
 
