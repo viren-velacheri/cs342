@@ -10,7 +10,24 @@ class CNNClassifier(torch.nn.Module):
         Hint: Base this on yours or HW2 master solution if you'd like.
         Hint: Overall model can be similar to HW2, but you likely need some architecture changes (e.g. ResNets)
         """
-        raise NotImplementedError('CNNClassifier.__init__')
+        input_channels = 3
+        num_classes = 6
+        self.layers = torch.nn.Sequential(
+            self.__block(input_channels, 32, (7, 1, 3)),
+            self.__block(32, 64),
+            self.__block(64, 128),
+            torch.nn.AvgPool2d(2),
+            torch.nn.Flatten(),
+            torch.nn.Linear(2048, num_classes)
+        )
+
+    def __block(self, in_dim, out_dim, extra=(3, 1, 1), pool=(2, 2)):
+      return torch.nn.Sequential(
+          torch.nn.Conv2d(in_dim, out_dim, *extra),
+          torch.nn.BatchNorm2d(out_dim),
+          torch.nn.SiLU(),
+          torch.nn.MaxPool2d(*pool),
+      )
 
     def forward(self, x):
         """
@@ -19,7 +36,7 @@ class CNNClassifier(torch.nn.Module):
         @return: torch.Tensor((B,6))
         Hint: Apply input normalization inside the network, to make sure it is applied in the grader
         """
-        raise NotImplementedError('CNNClassifier.forward')
+        return self.layers(x)
 
 
 class FCN(torch.nn.Module):

@@ -3,6 +3,7 @@ from .utils import ConfusionMatrix, load_data, LABEL_NAMES
 import torch
 import torchvision
 import torch.utils.tensorboard as tb
+from tqdm.notebook import tqdm
 
 
 def train(args):
@@ -16,6 +17,28 @@ def train(args):
     """
     Your code here, modify your HW1 / HW2 code
     """
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = CNNClassifier()
+    model.to(device)
+    dataset_path = "data/train"
+    dataset = load_data(dataset_path)
+    global_step = 0
+    loss_function = torch.nn.CrossEntropyLoss()
+    lr = 0.001
+    epochs = 50
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    for epoch in tqdm(range(epochs)):
+        model.train()
+        for x, y in dataset:
+            x = x.to(device)
+            y = y.to(device)
+            output = model(x)
+            loss = loss_function(output, y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            global_step += 1
+        model.eval()
     save_model(model)
 
 
