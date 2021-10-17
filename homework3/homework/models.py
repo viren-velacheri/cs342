@@ -1,4 +1,5 @@
 import torch
+import torchvision
 import torch.nn.functional as F
 
 
@@ -53,6 +54,7 @@ class FCN(torch.nn.Module):
         base_channels = 32
         input_channels = 3
         output_channels = 6
+        self.transforms = torchvision.transforms.Compose([torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
         self.pool = torch.nn.MaxPool2d(3, 2, 1)
         self.conv1 = torch.nn.Sequential(
             torch.nn.Conv2d(input_channels, base_channels, 3, 1, 1),
@@ -150,7 +152,9 @@ class FCN(torch.nn.Module):
               if required (use z = z[:, :, :H, :W], where H and W are the height and width of a corresponding strided
               convolution
         """
-        # print("Initial Shape: " + str(x.shape))
+        # x = torch.FloatTensor(torch.ones((32, 3, 96, 128)))
+        x = self.transforms(x)
+        print("Initial Shape: " + str(x.shape))
         h = x.shape[2]
         w = x.shape[3]
         x1 = self.conv1(x)
@@ -167,8 +171,7 @@ class FCN(torch.nn.Module):
         x2 = self.upconv2(torch.cat([x3, x2], 1))
         x2 = torch.nn.functional.upsample(x2, scale_factor=2)
         x1 = self.upconv1(torch.cat([x2, x1], 1))
-        # print("WHERE IS THE ERROR THAT I AM TRYING TO FIND: " + str(self.classifier(x1).shape))
-        # print("Changed Shape: " + str(self.classifier(x1).shape))
+        print("Changed Shape: " + str(self.classifier(x1).shape))
         x1 = x1[:, :, :h, :w]
         return self.classifier(x1)
         # return self.net(x)
