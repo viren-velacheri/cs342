@@ -5,11 +5,14 @@ from .models import FCN, save_model
 from .utils import load_dense_data, DENSE_CLASS_DISTRIBUTION, ConfusionMatrix
 from . import dense_transforms
 import torch.utils.tensorboard as tb
+from tqdm.notebook import tqdm
 
 
 def train(args):
     from os import path
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = FCN()
+    model.to(device)
     train_logger, valid_logger = None, None
     if args.log_dir is not None:
         train_logger = tb.SummaryWriter(path.join(args.log_dir, 'train'), flush_secs=1)
@@ -22,6 +25,40 @@ def train(args):
     Hint: If you found a good data augmentation parameters for the CNN, use them here too. Use dense_transforms
     Hint: Use the log function below to debug and visualize your model
     """
+    loss_fun = torch.nn.CrossEntropyLoss()
+    optim = torch.optim.AdamW(model.parameters())
+    epochs = 50
+    dataset_path = "dense_data/train"
+    dataset = load_dense_data(dataset_path)
+    # Train the model
+    for epoch in tqdm(range(epochs)):
+        # Train for an epoch
+        model.train()
+        for image, label in dataset:
+            # Move image, label to GPU
+            image, label = image.to(device), label.to(device)
+            
+            # Compute network output
+            pred = model(image)
+            
+            # Compute loss
+            loss_val = loss_fun(pred, label)
+
+            # Zero gradient
+            optim.zero_grad()
+            # Backward
+            loss_val.backward()
+            # Step optim
+            optim.step()
+            # Logging
+            logger.add_scalar('train/loss', float(loss_val), global_step=global_step)
+            global_step += 1
+        
+        logger.add_scalar('train/accuracy', float(metric.accuracy), global_step=global_step)
+        logger.add_scalar('train/iou', float(metric.iou), global_step=global_step)
+
+        # TODO: Evaluate the model
+        model.eval()
     save_model(model)
 
 
