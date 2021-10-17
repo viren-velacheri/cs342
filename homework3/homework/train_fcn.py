@@ -42,7 +42,7 @@ def train(args):
             pred = model(image)
             
             # Compute loss
-            loss_val = loss_fun(pred, label)
+            loss_val = loss_fun(pred, label.long())
 
             # Zero gradient
             optim.zero_grad()
