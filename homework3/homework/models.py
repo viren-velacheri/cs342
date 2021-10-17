@@ -52,7 +52,7 @@ class FCN(torch.nn.Module):
         """
         base_channels = 32
         input_channels = 3
-        output_channels = 1
+        output_channels = 6
         self.pool = torch.nn.MaxPool2d(3, 2, 1)
         self.conv1 = torch.nn.Sequential(
             torch.nn.Conv2d(input_channels, base_channels, 3, 1, 1),
@@ -60,46 +60,55 @@ class FCN(torch.nn.Module):
             torch.nn.ReLU(True),
         )
         self.conv2 = torch.nn.Sequential(
+            # torch.nn.Dropout(p=0.2),
             torch.nn.Conv2d(base_channels, base_channels * 2, 3, 1, 1),
             torch.nn.BatchNorm2d(base_channels * 2),
             torch.nn.ReLU(True),
         )
         self.conv3 = torch.nn.Sequential(
+            # torch.nn.Dropout(p=0.2),
             torch.nn.Conv2d(base_channels * 2, base_channels * 4, 3, 1, 1),
             torch.nn.BatchNorm2d(base_channels * 4),
             torch.nn.ReLU(True),
         )
         self.conv4 = torch.nn.Sequential(
+            # torch.nn.Dropout(p=0.2),
             torch.nn.Conv2d(base_channels * 4, base_channels * 8, 3, 1, 1),
             torch.nn.BatchNorm2d(base_channels * 8),
             torch.nn.ReLU(True),
         )
         self.conv5 = torch.nn.Sequential(
+            # torch.nn.Dropout(p=0.2),
             torch.nn.Conv2d(base_channels * 8, base_channels * 16, 3, 1, 1),
             torch.nn.BatchNorm2d(base_channels * 16),
             torch.nn.ReLU(True),
         )
         self.upconv5 = torch.nn.Sequential(
+            torch.nn.Dropout(p=0.2),
             torch.nn.Conv2d(base_channels * 16, base_channels * 8, 3, 1, 1),
             torch.nn.BatchNorm2d(base_channels * 8),
             torch.nn.ReLU(True),
         )
         self.upconv4 = torch.nn.Sequential(
+            torch.nn.Dropout(p=0.2),
             torch.nn.Conv2d(base_channels * 16, base_channels * 4, 3, 1, 1),
             torch.nn.BatchNorm2d(base_channels * 4),
             torch.nn.ReLU(True),
         )
         self.upconv3 = torch.nn.Sequential(
+            torch.nn.Dropout(p=0.2),
             torch.nn.Conv2d(base_channels * 8, base_channels * 2, 3, 1, 1),
             torch.nn.BatchNorm2d(base_channels * 2),
             torch.nn.ReLU(True),
         )
         self.upconv2 = torch.nn.Sequential(
+            torch.nn.Dropout(p=0.2),
             torch.nn.Conv2d(base_channels * 4, base_channels, 3, 1, 1),
             torch.nn.BatchNorm2d(base_channels),
             torch.nn.ReLU(True),
         )
         self.upconv1 = torch.nn.Sequential(
+            torch.nn.Dropout(p=0.2),
             torch.nn.Conv2d(base_channels * 2, base_channels, 3, 1, 1),
             torch.nn.BatchNorm2d(base_channels),
             torch.nn.ReLU(True),
@@ -141,6 +150,9 @@ class FCN(torch.nn.Module):
               if required (use z = z[:, :, :H, :W], where H and W are the height and width of a corresponding strided
               convolution
         """
+        # print("Initial Shape: " + str(x.shape))
+        h = x.shape[2]
+        w = x.shape[3]
         x1 = self.conv1(x)
         x2 = self.conv2(self.pool(x1))
         x3 = self.conv3(self.pool(x2))
@@ -155,6 +167,9 @@ class FCN(torch.nn.Module):
         x2 = self.upconv2(torch.cat([x3, x2], 1))
         x2 = torch.nn.functional.upsample(x2, scale_factor=2)
         x1 = self.upconv1(torch.cat([x2, x1], 1))
+        # print("WHERE IS THE ERROR THAT I AM TRYING TO FIND: " + str(self.classifier(x1).shape))
+        # print("Changed Shape: " + str(self.classifier(x1).shape))
+        x1 = x1[:, :, :h, :w]
         return self.classifier(x1)
         # return self.net(x)
 

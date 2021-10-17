@@ -28,6 +28,7 @@ def train(args):
     loss_fun = torch.nn.CrossEntropyLoss()
     optim = torch.optim.AdamW(model.parameters())
     epochs = 50
+    global_step = 0
     dataset_path = "dense_data/train"
     dataset = load_dense_data(dataset_path)
     # Train the model
@@ -43,7 +44,7 @@ def train(args):
             
             # Compute loss
             loss_val = loss_fun(pred, label.long())
-
+            
             # Zero gradient
             optim.zero_grad()
             # Backward
@@ -51,11 +52,11 @@ def train(args):
             # Step optim
             optim.step()
             # Logging
-            logger.add_scalar('train/loss', float(loss_val), global_step=global_step)
+            # logger.add_scalar('train/loss', float(loss_val), global_step=global_step)
             global_step += 1
         
-        logger.add_scalar('train/accuracy', float(metric.accuracy), global_step=global_step)
-        logger.add_scalar('train/iou', float(metric.iou), global_step=global_step)
+        # logger.add_scalar('train/accuracy', float(metric.accuracy), global_step=global_step)
+        # logger.add_scalar('train/iou', float(metric.iou), global_step=global_step)
 
         # TODO: Evaluate the model
         model.eval()
