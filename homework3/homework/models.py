@@ -3,7 +3,28 @@ import torchvision
 import torch.nn.functional as F
 
 
+
 class CNNClassifier(torch.nn.Module):
+    class Block(torch.nn.Module):
+        def __init__(self, n_input, n_output, stride=1):
+            super().__init__()
+            self.net = torch.nn.Sequential(
+              torch.nn.Conv2d(n_input, n_output, kernel_size=3, padding=1, stride=stride, bias=False),
+              torch.nn.BatchNorm2d(n_output),
+              torch.nn.ReLU(),
+              torch.nn.Conv2d(n_output, n_output, kernel_size=3, padding=1, bias=False),
+              torch.nn.BatchNorm2d(n_output),
+              torch.nn.ReLU()
+            )
+            self.downsample = None
+            if stride != 1 or n_input != n_output:
+                self.downsample = torch.nn.Sequential(torch.nn.Conv2d(n_input, n_output, 1),
+                                                      torch.nn.BatchNorm2d(n_output))
+        def forward(self, x):
+            identity = x
+            if self.downsample is not None:
+                identity = self.downsample(x)
+            return self.net(x) + identity        
     def __init__(self):
         super().__init__()
         """
@@ -13,6 +34,7 @@ class CNNClassifier(torch.nn.Module):
         """
         input_channels = 3
         num_classes = 6
+        layers=[32,64,128]
         self.layers = torch.nn.Sequential(
             self.__block(input_channels, 32, (7, 1, 3)),
             self.__block(32, 64),
@@ -39,6 +61,70 @@ class CNNClassifier(torch.nn.Module):
         """
         return self.layers(x)
 
+class ResNet(torch.nn.Module):
+    def __init__(self, c_in, c_out, kernel=3, stride=1, groups=1):
+        super().__init__()
+        pad = (kernel-1)//2
+        self.c1 = torch.nn.Conv2d(c_in, c_out, kernel, stride=stride, padding=pad, groups=groups)
+        self.c2 = torch.nn.Conv2d(c_out, c_out, kernel, padding=pad, groups=groups)
+        self.identity = torch.nn.Identity()
+        if c_in != c_out or stride != 1:
+            self.identity = torch.nn.Conv2d(c_in, c_out, 1, stride=stride)
+    def forward(self, x):
+        x_in = x
+        x = self.c1(torch.relu(x))
+        x = self.c2(torch.relu(x))
+        return x + self.identity(x_in)
+
+class ContractNet(torch.nn.Module):
+    def __init__(self, c_in, c_out, kernel=3, groups=1, dropout_p=0.1):
+        super().__init__()
+        self.layers = torch.nn.Sequential(*[
+            ResNet(c_in, c_out, kernel=kernel, groups=groups),
+            torch.nn.BatchNorm2d(c_out)
+        ])
+        self.pool = torch.nn.MaxPool2d(2)
+    
+    def forward(self, x):
+        processed = self.layers(x)
+
+        if processed.shape[2] <= 1 or processed.shape[3] <= 1:
+            pooled = processed
+        else:
+            pooled = self.pool(processed)
+
+        return pooled, processed
+
+class ExpandNet(torch.nn.Module):
+    def __init__(self, c_in, c_out, kernel=3, groups=1, dropout_p=0.1):
+        super().__init__()
+        self.layers = torch.nn.Sequential(*[
+            ResNet(c_in, c_out, kernel=kernel, groups=groups),
+            torch.nn.BatchNorm2d(c_out),
+            torch.nn.ConvTranspose2d(c_out, c_out, kernel_size=3, stride=2, padding=1, output_padding=1)
+        ])
+    
+    def forward(self, x, skip_in):
+        if skip_in is None:
+            combined = x
+        else:
+            combined = torch.cat((x[:, :, :skip_in.shape[2], :skip_in.shape[3]], skip_in), dim=1)
+        return self.layers(combined)
+
+class SkipLayer(torch.nn.Module):
+    def __init__(self, c_in, c_out, kernel=3, groups=1, dropout_p=0.1):
+        super().__init__()
+        self.layers = torch.nn.Sequential(*[
+            ResNet(c_in, c_out, kernel=kernel, groups=groups),
+            torch.nn.BatchNorm2d(c_out),
+        ])
+    
+    def forward(self, x, skip_in):
+        if skip_in is None:
+            combined = x
+        else:
+            combined = torch.cat((x[:, :, :skip_in.shape[2], :skip_in.shape[3]], skip_in), dim=1)
+        return self.layers(combined)
 
 class FCN(torch.nn.Module):
     class Block(torch.nn.Module):

@@ -29,7 +29,7 @@ class SuperTuxDataset(Dataset):
           transforms.RandomCrop(64),
           transforms.ToTensor(),
         ])
-        # transformation = transforms.ToTensor()
+        transformation = transforms.ToTensor()
         labels_csv_path = dataset_path + "/labels.csv"
         with open(labels_csv_path, newline='') as csvfile:
           dictReader = csv.DictReader(csvfile)
