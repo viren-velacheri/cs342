@@ -25,7 +25,7 @@ def train(args):
     global_step = 0
     loss_function = torch.nn.CrossEntropyLoss()
     lr = 0.001
-    epochs = 50
+    epochs = 10
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     for epoch in tqdm(range(epochs)):
         model.train()
