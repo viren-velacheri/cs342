@@ -18,8 +18,8 @@ def train(args):
     Your code here, modify your HW1 / HW2 code
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = CNNClassifier()
-    model.to(device)
+    model = CNNClassifier().to(device)
+    # model.to(device)
     dataset_path = "data/train"
     dataset = load_data(dataset_path)
     global_step = 0

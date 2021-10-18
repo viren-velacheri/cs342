@@ -11,8 +11,8 @@ from tqdm.notebook import tqdm
 def train(args):
     from os import path
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = FCN()
-    model.to(device)
+    model = FCN().to(device)
+    # model.to(device)
     train_logger, valid_logger = None, None
     if args.log_dir is not None:
         train_logger = tb.SummaryWriter(path.join(args.log_dir, 'train'), flush_secs=1)
@@ -25,9 +25,10 @@ def train(args):
     Hint: If you found a good data augmentation parameters for the CNN, use them here too. Use dense_transforms
     Hint: Use the log function below to debug and visualize your model
     """
+    lr = 0.001
     loss_fun = torch.nn.CrossEntropyLoss()
-    optim = torch.optim.AdamW(model.parameters())
-    epochs = 10
+    optim = torch.optim.AdamW(model.parameters(), lr=lr)
+    epochs = 20
     global_step = 0
     dataset_path = "dense_data/train"
     dataset = load_dense_data(dataset_path)

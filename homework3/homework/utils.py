@@ -23,7 +23,13 @@ class SuperTuxDataset(Dataset):
         Hint: Do not store torch.Tensor's as data here, but use PIL images, torchvision.transforms expects PIL images
               for most transformations.
         """
-        transformation = transforms.ToTensor()
+        transformation = transforms.Compose([
+          transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
+          transforms.RandomHorizontalFlip(),
+          transforms.RandomCrop(64),
+          transform.ToTensor(),
+        ])
+        # transformation = transforms.ToTensor()
         labels_csv_path = dataset_path + "/labels.csv"
         with open(labels_csv_path, newline='') as csvfile:
           dictReader = csv.DictReader(csvfile)
