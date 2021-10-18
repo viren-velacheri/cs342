@@ -154,6 +154,26 @@ class FCN(torch.nn.Module):
         Hint: Use residual connections
         Hint: Always pad by kernel_size / 2, use an odd kernel_size
         """
+        # self.norm = torch.nn.BatchNorm2d(3)
+        # self.transforms = torchvision.transforms.Compose([torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+        # self.down0 = ContractNet(3, 16)
+        # self.down1 = ContractNet(16, 32, groups=2)
+        # self.down2 = ContractNet(32, 64, groups=4)
+
+        # self.up2 = ExpandNet(64, 64, groups=4)
+        # self.up1 = ExpandNet(64+64, 64, groups=4)
+        # self.up0 = ExpandNet(64+32, 64, groups=2)
+        
+        # self.skip = SkipLayer(64+16, 64, groups=2)
+
+        # self.final = torch.nn.Sequential(*[
+        #     torch.nn.Conv2d(64, 16, 3, padding=1, groups=2),
+        #     torch.nn.ReLU(),
+        #     torch.nn.BatchNorm2d(16),
+        #     torch.nn.Conv2d(16, 6, 3, padding=1)
+        # ])
+
         self.relu = torch.nn.ReLU()
         self.norm = torch.nn.BatchNorm2d(3)
         self.down1 = torch.nn.Conv2d(3,32, kernel_size=3, stride=2, padding=1)
@@ -171,6 +191,8 @@ class FCN(torch.nn.Module):
         self.up2 = torch.nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1)
         self.up1 = torch.nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1)
         self.linear = torch.nn.Conv2d(16, 5, kernel_size=1, stride=1, padding=0)
+
+
 
 
         # base_channels = 32
@@ -249,7 +271,34 @@ class FCN(torch.nn.Module):
               if required (use z = z[:, :, :H, :W], where H and W are the height and width of a corresponding strided
               convolution
         """
+        # print("Initial shape: " + str(x.shape))
+        # h = x.shape[2]
+        # w = x.shape[3]
+        # if x.shape[2] < 16 or x.shape[3] < 16:
+        #   hpad = 0
+        #   vpad = 0
+        #   if x.shape[3] < 16:
+        #     hpad = (16 - x.shape[3]) // 2
+        #   if x.shape[2] < 16:
+        #     vpad = (16 - x.shape[2]) // 2
+        #   x = torch.nn.functional.pad(x, (hpad, vpad, vpad))
         
+        # # x = self.norm(x)
+        # x = self.transforms(x)
+        
+        # x, s0 = self.down0(x)
+        # x, s1 = self.down1(x)
+        # x, s2 = self.down2(x)
+
+        # x = self.up2(x, None)
+        # x = self.up1(x, s2)
+        # x = self.up0(x, s1)
+
+        # x = self.skip(x, s0)
+        # x = self.final(x)
+        # x = x[:, :, :h, :w]
+        # # print("Final shape: " + str(x.shape))
+        # return x
         
         h = x.shape[2]
         w = x.shape[3]
@@ -272,6 +321,8 @@ class FCN(torch.nn.Module):
         up1 = up1[:, :, :h, :w]
 
         return self.linear(up1)
+
+
 
         # x = self.transforms(x)
         # print("Initial Shape: " + str(x.shape))

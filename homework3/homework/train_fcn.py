@@ -28,7 +28,7 @@ def train(args):
     lr = 0.001
     loss_fun = torch.nn.CrossEntropyLoss()
     optim = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-6)
-    epochs = 25
+    epochs = 50
     global_step = 0
     dataset_path = "dense_data/train"
     dataset = load_dense_data(dataset_path)
