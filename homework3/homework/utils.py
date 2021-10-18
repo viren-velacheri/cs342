@@ -27,7 +27,7 @@ class SuperTuxDataset(Dataset):
           transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
           transforms.RandomHorizontalFlip(),
           transforms.RandomCrop(64),
-          transform.ToTensor(),
+          transforms.ToTensor(),
         ])
         # transformation = transforms.ToTensor()
         labels_csv_path = dataset_path + "/labels.csv"
