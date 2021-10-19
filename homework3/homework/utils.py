@@ -57,7 +57,6 @@ class DenseSuperTuxDataset(Dataset):
         transform = dense_transforms.Compose([
           dense_transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
           dense_transforms.RandomHorizontalFlip(),
-          transforms.RandomCrop(64),
           dense_transforms.ToTensor(),
         ])
         from glob import glob

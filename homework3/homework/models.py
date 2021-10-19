@@ -53,22 +53,22 @@ class FCN(torch.nn.Module):
         Hint: Always pad by kernel_size / 2, use an odd kernel_size
         """
         self.relu = torch.nn.ReLU()
-        self.norm = torch.nn.BatchNorm2d(3)
-        self.down1 = torch.nn.Conv2d(3,32, kernel_size=3, stride=2, padding=1)
-        self.down2 = torch.nn.Sequential(
+        self.normalization = torch.nn.BatchNorm2d(3)
+        self.down_conv1 = torch.nn.Conv2d(3,32, kernel_size=3, stride=2, padding=1)
+        self.down_conv2 = torch.nn.Sequential(
           torch.nn.Dropout2d(p=0.3),
           torch.nn.BatchNorm2d(32),
           torch.nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
         )
-        self.down3 = torch.nn.Sequential(
+        self.down_conv3 = torch.nn.Sequential(
           torch.nn.Dropout2d(p=0.3),
           torch.nn.BatchNorm2d(64),
           torch.nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
         )
-        self.up3 = torch.nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
-        self.up2 = torch.nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1)
-        self.up1 = torch.nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1)
-        self.linear = torch.nn.Conv2d(16, 5, kernel_size=1, stride=1, padding=0)
+        self.up_conv3 = torch.nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
+        self.up_conv2 = torch.nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1)
+        self.up_conv1 = torch.nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1)
+        self.classifier = torch.nn.Conv2d(16, 5, kernel_size=1, stride=1, padding=0)
     def forward(self, x):
         """
         Your code here
@@ -91,16 +91,16 @@ class FCN(torch.nn.Module):
             vpad = (16 - x.shape[2]) // 2
           x = torch.nn.functional.pad(x, (hpad, vpad, vpad))
         
-        x = self.norm(x)
-        down1 = self.relu(self.down1(x))
-        down2 = self.relu(self.down2(down1))
-        down3 = self.relu(self.down3(down2))
-        up3 = self.relu(self.up3(down3))
-        up2 = self.relu(self.up2(up3))
-        up1 = self.relu(self.up1(up2))
-        up1 = up1[:, :, :h, :w]
+        x = self.normalization(x)
+        conv_down1 = self.relu(self.down_conv1(x))
+        conv_down2 = self.relu(self.down_conv2(conv_down1))
+        conv_down3 = self.relu(self.down_conv3(conv_down2))
+        conv_up3 = self.relu(self.up_conv3(conv_down3))
+        conv_up2 = self.relu(self.up_conv2(conv_up3))
+        conv_up1 = self.relu(self.up_conv1(conv_up2))
+        conv_up1 = conv_up1[:, :, :h, :w]
 
-        return self.linear(up1)
+        return self.classifier(conv_up1)
 
 
 
