@@ -12,7 +12,6 @@ def train(args):
     from os import path
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = FCN().to(device)
-    # model.to(device)
     train_logger, valid_logger = None, None
     if args.log_dir is not None:
         train_logger = tb.SummaryWriter(path.join(args.log_dir, 'train'), flush_secs=1)

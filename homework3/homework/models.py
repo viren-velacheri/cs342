@@ -4,27 +4,7 @@ import torch.nn.functional as F
 
 
 
-class CNNClassifier(torch.nn.Module):
-    class Block(torch.nn.Module):
-        def __init__(self, n_input, n_output, stride=1):
-            super().__init__()
-            self.net = torch.nn.Sequential(
-              torch.nn.Conv2d(n_input, n_output, kernel_size=3, padding=1, stride=stride, bias=False),
-              torch.nn.BatchNorm2d(n_output),
-              torch.nn.ReLU(),
-              torch.nn.Conv2d(n_output, n_output, kernel_size=3, padding=1, bias=False),
-              torch.nn.BatchNorm2d(n_output),
-              torch.nn.ReLU()
-            )
-            self.downsample = None
-            if stride != 1 or n_input != n_output:
-                self.downsample = torch.nn.Sequential(torch.nn.Conv2d(n_input, n_output, 1),
-                                                      torch.nn.BatchNorm2d(n_output))
-        def forward(self, x):
-            identity = x
-            if self.downsample is not None:
-                identity = self.downsample(x)
-            return self.net(x) + identity        
+class CNNClassifier(torch.nn.Module):      
     def __init__(self):
         super().__init__()
         """
@@ -61,89 +41,7 @@ class CNNClassifier(torch.nn.Module):
         """
         return self.layers(x)
 
-class ResNet(torch.nn.Module):
-    def __init__(self, c_in, c_out, kernel=3, stride=1, groups=1):
-        super().__init__()
-        pad = (kernel-1)//2
-        self.c1 = torch.nn.Conv2d(c_in, c_out, kernel, stride=stride, padding=pad, groups=groups)
-        self.c2 = torch.nn.Conv2d(c_out, c_out, kernel, padding=pad, groups=groups)
-        self.identity = torch.nn.Identity()
-        if c_in != c_out or stride != 1:
-            self.identity = torch.nn.Conv2d(c_in, c_out, 1, stride=stride)
-    def forward(self, x):
-        x_in = x
-        x = self.c1(torch.relu(x))
-        x = self.c2(torch.relu(x))
-        return x + self.identity(x_in)
-
-class ContractNet(torch.nn.Module):
-    def __init__(self, c_in, c_out, kernel=3, groups=1, dropout_p=0.1):
-        super().__init__()
-        self.layers = torch.nn.Sequential(*[
-            ResNet(c_in, c_out, kernel=kernel, groups=groups),
-            torch.nn.BatchNorm2d(c_out)
-        ])
-        self.pool = torch.nn.MaxPool2d(2)
-    
-    def forward(self, x):
-        processed = self.layers(x)
-
-        if processed.shape[2] <= 1 or processed.shape[3] <= 1:
-            pooled = processed
-        else:
-            pooled = self.pool(processed)
-
-        return pooled, processed
-
-class ExpandNet(torch.nn.Module):
-    def __init__(self, c_in, c_out, kernel=3, groups=1, dropout_p=0.1):
-        super().__init__()
-        self.layers = torch.nn.Sequential(*[
-            ResNet(c_in, c_out, kernel=kernel, groups=groups),
-            torch.nn.BatchNorm2d(c_out),
-            torch.nn.ConvTranspose2d(c_out, c_out, kernel_size=3, stride=2, padding=1, output_padding=1)
-        ])
-    
-    def forward(self, x, skip_in):
-        if skip_in is None:
-            combined = x
-        else:
-            combined = torch.cat((x[:, :, :skip_in.shape[2], :skip_in.shape[3]], skip_in), dim=1)
-        return self.layers(combined)
-
-class SkipLayer(torch.nn.Module):
-    def __init__(self, c_in, c_out, kernel=3, groups=1, dropout_p=0.1):
-        super().__init__()
-        self.layers = torch.nn.Sequential(*[
-            ResNet(c_in, c_out, kernel=kernel, groups=groups),
-            torch.nn.BatchNorm2d(c_out),
-        ])
-    
-    def forward(self, x, skip_in):
-        if skip_in is None:
-            combined = x
-        else:
-            combined = torch.cat((x[:, :, :skip_in.shape[2], :skip_in.shape[3]], skip_in), dim=1)
-        return self.layers(combined)
-
 class FCN(torch.nn.Module):
-    class Block(torch.nn.Module):
-        def __init__(self, n_input, n_output, stride=1):
-            super().__init__()
-            self.net = torch.nn.Sequential(
-              torch.nn.Dropout2d(p=0.2),
-              torch.nn.BatchNorm2d(n_input),
-              torch.nn.Conv2d(n_input, n_output, kernel_size=5, padding=2, stride=stride),
-              torch.nn.ReLU(),
-          )
-            self.downsample = None
-            if stride != 1 or n_input != n_output:
-                self.downsample = torch.nn.Sequential(torch.nn.Conv2d(n_input, n_output, 1, stride=stride))
-        def forward(self, x):
-            identity = x
-            if self.downsample is not None:
-                identity = self.downsample(x)
-            return self.net(x) + identity
     def __init__(self):
         super().__init__()
         """
@@ -154,36 +52,16 @@ class FCN(torch.nn.Module):
         Hint: Use residual connections
         Hint: Always pad by kernel_size / 2, use an odd kernel_size
         """
-        # self.norm = torch.nn.BatchNorm2d(3)
-        # self.transforms = torchvision.transforms.Compose([torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-        # self.down0 = ContractNet(3, 16)
-        # self.down1 = ContractNet(16, 32, groups=2)
-        # self.down2 = ContractNet(32, 64, groups=4)
-
-        # self.up2 = ExpandNet(64, 64, groups=4)
-        # self.up1 = ExpandNet(64+64, 64, groups=4)
-        # self.up0 = ExpandNet(64+32, 64, groups=2)
-        
-        # self.skip = SkipLayer(64+16, 64, groups=2)
-
-        # self.final = torch.nn.Sequential(*[
-        #     torch.nn.Conv2d(64, 16, 3, padding=1, groups=2),
-        #     torch.nn.ReLU(),
-        #     torch.nn.BatchNorm2d(16),
-        #     torch.nn.Conv2d(16, 6, 3, padding=1)
-        # ])
-
         self.relu = torch.nn.ReLU()
         self.norm = torch.nn.BatchNorm2d(3)
         self.down1 = torch.nn.Conv2d(3,32, kernel_size=3, stride=2, padding=1)
         self.down2 = torch.nn.Sequential(
-          torch.nn.Dropout2d(p=0.2),
+          torch.nn.Dropout2d(p=0.3),
           torch.nn.BatchNorm2d(32),
           torch.nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
         )
         self.down3 = torch.nn.Sequential(
-          torch.nn.Dropout2d(p=0.2),
+          torch.nn.Dropout2d(p=0.3),
           torch.nn.BatchNorm2d(64),
           torch.nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
         )
@@ -191,76 +69,6 @@ class FCN(torch.nn.Module):
         self.up2 = torch.nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1)
         self.up1 = torch.nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1)
         self.linear = torch.nn.Conv2d(16, 5, kernel_size=1, stride=1, padding=0)
-
-
-
-
-        # base_channels = 32
-        # input_channels = 3
-        # output_channels = 6
-        # self.transforms = torchvision.transforms.Compose([torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-        # self.pool = torch.nn.MaxPool2d(3, 2, 1)
-        # self.conv1 = torch.nn.Sequential(
-        #     torch.nn.Conv2d(input_channels, base_channels, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.conv2 = torch.nn.Sequential(
-        #     # torch.nn.Dropout(p=0.2),
-        #     torch.nn.Conv2d(base_channels, base_channels * 2, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels * 2),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.conv3 = torch.nn.Sequential(
-        #     # torch.nn.Dropout(p=0.2),
-        #     torch.nn.Conv2d(base_channels * 2, base_channels * 4, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels * 4),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.conv4 = torch.nn.Sequential(
-        #     # torch.nn.Dropout(p=0.2),
-        #     torch.nn.Conv2d(base_channels * 4, base_channels * 8, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels * 8),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.conv5 = torch.nn.Sequential(
-        #     # torch.nn.Dropout(p=0.2),
-        #     torch.nn.Conv2d(base_channels * 8, base_channels * 16, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels * 16),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.upconv5 = torch.nn.Sequential(
-        #     torch.nn.Dropout(p=0.2),
-        #     torch.nn.Conv2d(base_channels * 16, base_channels * 8, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels * 8),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.upconv4 = torch.nn.Sequential(
-        #     torch.nn.Dropout(p=0.2),
-        #     torch.nn.Conv2d(base_channels * 16, base_channels * 4, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels * 4),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.upconv3 = torch.nn.Sequential(
-        #     torch.nn.Dropout(p=0.2),
-        #     torch.nn.Conv2d(base_channels * 8, base_channels * 2, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels * 2),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.upconv2 = torch.nn.Sequential(
-        #     torch.nn.Dropout(p=0.2),
-        #     torch.nn.Conv2d(base_channels * 4, base_channels, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.upconv1 = torch.nn.Sequential(
-        #     torch.nn.Dropout(p=0.2),
-        #     torch.nn.Conv2d(base_channels * 2, base_channels, 3, 1, 1),
-        #     torch.nn.BatchNorm2d(base_channels),
-        #     torch.nn.ReLU(True),
-        # )
-        # self.classifier = torch.nn.Conv2d(base_channels, output_channels, 1, 1, 0)
-
     def forward(self, x):
         """
         Your code here
@@ -271,34 +79,6 @@ class FCN(torch.nn.Module):
               if required (use z = z[:, :, :H, :W], where H and W are the height and width of a corresponding strided
               convolution
         """
-        # print("Initial shape: " + str(x.shape))
-        # h = x.shape[2]
-        # w = x.shape[3]
-        # if x.shape[2] < 16 or x.shape[3] < 16:
-        #   hpad = 0
-        #   vpad = 0
-        #   if x.shape[3] < 16:
-        #     hpad = (16 - x.shape[3]) // 2
-        #   if x.shape[2] < 16:
-        #     vpad = (16 - x.shape[2]) // 2
-        #   x = torch.nn.functional.pad(x, (hpad, vpad, vpad))
-        
-        # # x = self.norm(x)
-        # x = self.transforms(x)
-        
-        # x, s0 = self.down0(x)
-        # x, s1 = self.down1(x)
-        # x, s2 = self.down2(x)
-
-        # x = self.up2(x, None)
-        # x = self.up1(x, s2)
-        # x = self.up0(x, s1)
-
-        # x = self.skip(x, s0)
-        # x = self.final(x)
-        # x = x[:, :, :h, :w]
-        # # print("Final shape: " + str(x.shape))
-        # return x
         
         h = x.shape[2]
         w = x.shape[3]
@@ -321,28 +101,6 @@ class FCN(torch.nn.Module):
         up1 = up1[:, :, :h, :w]
 
         return self.linear(up1)
-
-
-
-        # x = self.transforms(x)
-        # print("Initial Shape: " + str(x.shape))
-        # x1 = self.conv1(x)
-        # x2 = self.conv2(self.pool(x1))
-        # x3 = self.conv3(self.pool(x2))
-        # x4 = self.conv4(self.pool(x3))
-        # x5 = self.conv5(self.pool(x4))
-        # x5 = self.upconv5(x5)
-        # x5 = torch.nn.functional.upsample(x5, scale_factor=2)
-        # x4 = self.upconv4(torch.cat([x5, x4], 1))
-        # x4 = torch.nn.functional.upsample(x4, scale_factor=2)
-        # x3 = self.upconv3(torch.cat([x4, x3], 1))
-        # x3 = torch.nn.functional.upsample(x3, scale_factor=2)
-        # x2 = self.upconv2(torch.cat([x3, x2], 1))
-        # x2 = torch.nn.functional.upsample(x2, scale_factor=2)
-        # x1 = self.upconv1(torch.cat([x2, x1], 1))
-        # print("Changed Shape: " + str(self.classifier(x1).shape))
-        # x1 = x1[:, :, :h, :w]
-        # return self.classifier(x1)
 
 
 

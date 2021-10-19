@@ -29,7 +29,7 @@ class SuperTuxDataset(Dataset):
           transforms.RandomCrop(64),
           transforms.ToTensor(),
         ])
-        transformation = transforms.ToTensor()
+        # transformation = transforms.ToTensor()
         labels_csv_path = dataset_path + "/labels.csv"
         with open(labels_csv_path, newline='') as csvfile:
           dictReader = csv.DictReader(csvfile)
@@ -57,6 +57,7 @@ class DenseSuperTuxDataset(Dataset):
         transform = dense_transforms.Compose([
           dense_transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
           dense_transforms.RandomHorizontalFlip(),
+          transforms.RandomCrop(64),
           dense_transforms.ToTensor(),
         ])
         from glob import glob
