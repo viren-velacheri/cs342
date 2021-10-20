@@ -53,6 +53,7 @@ class FCN(torch.nn.Module):
         Hint: Always pad by kernel_size / 2, use an odd kernel_size
         """
         self.relu = torch.nn.ReLU()
+        output_channels = 5
         self.normalization = torch.nn.BatchNorm2d(3)
         self.down_conv1 = torch.nn.Conv2d(3,32, kernel_size=3, stride=2, padding=1)
         self.down_conv2 = torch.nn.Sequential(
@@ -65,10 +66,16 @@ class FCN(torch.nn.Module):
           torch.nn.BatchNorm2d(64),
           torch.nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
         )
+        self.down_conv4 = torch.nn.Sequential(
+          torch.nn.Dropout2d(p=0.3),
+          torch.nn.BatchNorm2d(128),
+          torch.nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
+        )
+        self.up_conv4 = torch.nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1)
         self.up_conv3 = torch.nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1)
         self.up_conv2 = torch.nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1)
         self.up_conv1 = torch.nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1)
-        self.classifier = torch.nn.Conv2d(16, 5, kernel_size=1, stride=1, padding=0)
+        self.classifier = torch.nn.Conv2d(16, output_channels, kernel_size=1, stride=1, padding=0)
     def forward(self, x):
         """
         Your code here
@@ -82,20 +89,13 @@ class FCN(torch.nn.Module):
         
         h = x.shape[2]
         w = x.shape[3]
-        if x.shape[2] < 16 or x.shape[3] < 16:
-          hpad = 0
-          vpad = 0
-          if x.shape[3] < 16:
-            hpad = (16 - x.shape[3]) // 2
-          if x.shape[2] < 16:
-            vpad = (16 - x.shape[2]) // 2
-          x = torch.nn.functional.pad(x, (hpad, vpad, vpad))
-        
         x = self.normalization(x)
         conv_down1 = self.relu(self.down_conv1(x))
         conv_down2 = self.relu(self.down_conv2(conv_down1))
         conv_down3 = self.relu(self.down_conv3(conv_down2))
-        conv_up3 = self.relu(self.up_conv3(conv_down3))
+        conv_down4 = self.relu(self.down_conv4(conv_down3))
+        conv_up4 = self.relu(self.up_conv4(conv_down4))
+        conv_up3 = self.relu(self.up_conv3(conv_up4))
         conv_up2 = self.relu(self.up_conv2(conv_up3))
         conv_up1 = self.relu(self.up_conv1(conv_up2))
         conv_up1 = conv_up1[:, :, :h, :w]

@@ -24,10 +24,10 @@ def train(args):
     Hint: If you found a good data augmentation parameters for the CNN, use them here too. Use dense_transforms
     Hint: Use the log function below to debug and visualize your model
     """
-    lr = 0.001
+    lr = 1e-3
     loss_fun = torch.nn.CrossEntropyLoss()
     optim = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-6)
-    epochs = 100
+    epochs = 80
     global_step = 0
     dataset_path = "dense_data/train"
     dataset = load_dense_data(dataset_path)
