@@ -12,7 +12,11 @@ def extract_peak(heatmap, max_pool_ks=7, min_score=-5, max_det=100):
        @return: List of peaks [(score, cx, cy), ...], where cx, cy are the position of a peak and score is the
                 heatmap value at the peak. Return no more than max_det peaks per image
     """
-    raise NotImplementedError('extract_peak')
+    max_pool_output = F.max_pool2d(heatmap[None, None], kernel_size=7, stride=2, padding=3)
+    top_k = torch.topk(max_pool_output, k=max_det)
+    print(top_k.shape)
+    # print(max_pool_output.shape)
+    # raise NotImplementedError('extract_peak')
 
 
 class Detector(torch.nn.Module):
