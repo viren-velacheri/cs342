@@ -12,35 +12,29 @@ def extract_peak(heatmap, max_pool_ks=7, min_score=-5, max_det=100):
        @return: List of peaks [(score, cx, cy), ...], where cx, cy are the position of a peak and score is the
                 heatmap value at the peak. Return no more than max_det peaks per image
     """
-    max_cls = F.max_pool2d(heatmap[None, None], kernel_size=max_pool_ks, padding=max_pool_ks // 2, stride=1)[0, 0]
+    max_pool_output = F.max_pool2d(heatmap[None, None], kernel_size=max_pool_ks, stride=1, padding = max_pool_ks // 2)[0, 0]
 
     # tip: visualize is_peak and heatmap side by side.
-    is_peak = (heatmap >= max_cls).float()
+    peak_finder = (max_pool_output <= heatmap).float()
 
-    coordinates = torch.nonzero(is_peak==1, as_tuple=True)
-    Y = coordinates[0]
-    X = coordinates[1]
+    y_coord = torch.nonzero(peak_finder==1, as_tuple=True)[0]
+    x_coord = torch.nonzero(peak_finder==1, as_tuple=True)[1]
 
-    max_det = min(heatmap[is_peak == 1].shape[0], max_det)
-    topk_tensor = torch.topk(heatmap[is_peak == 1], max_det)
-    scores = topk_tensor[0]
-    indices = topk_tensor[1]
+    max_det = min(max_det, heatmap[peak_finder == 1].shape[0])
+    peak_scores = torch.topk(heatmap[peak_finder == 1], max_det)[0]
+    peak_indices = list(torch.topk(heatmap[peak_finder == 1], max_det)[1])
 
-    indices_list = []
-    for index in indices:
-        indices_list.append(index)
-
-    peak_list = []
-    for i in range(len(indices_list)):
-        score = scores[i]
-        if (score > min_score):
-            index = indices[i]
-            cx = X[index]
-            cy = Y[index]
-            peak_tuple = (score, int(cx), int(cy))
-            peak_list.append(peak_tuple)
+    peaks_list = list()
+    i = 0
+    while i in range(len(peak_indices)):
+      peak_score = peak_scores[i]
+      if (min_score < peak_score):
+        peak_index = peak_indices[i]
+        peaks_tuple = (peak_score, x_coord[peak_index], y_coord[peak_index])
+        peaks_list.append(peaks_tuple)
+      i += 1
     
-    return peak_list
+    return peaks_list
 
 
 class Detector(torch.nn.Module):
