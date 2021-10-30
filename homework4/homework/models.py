@@ -44,7 +44,26 @@ class Detector(torch.nn.Module):
            Setup your detection network
         """
         super().__init__()
-        raise NotImplementedError('Detector.__init__')
+        input_channels = 3
+        num_classes = 6
+        layers=[32,64,128]
+        self.layers = torch.nn.Sequential(
+            self.__block(input_channels, 32, (7, 1, 3)),
+            self.__block(32, 64),
+            self.__block(64, 128),
+            torch.nn.AvgPool2d(2),
+            torch.nn.Flatten(),
+            torch.nn.Linear(2048, num_classes)
+        )
+
+    def __block(self, in_dim, out_dim, extra=(3, 1, 1), pool=(2, 2)):
+      return torch.nn.Sequential(
+          torch.nn.Conv2d(in_dim, out_dim, *extra),
+          torch.nn.BatchNorm2d(out_dim),
+          torch.nn.SiLU(),
+          torch.nn.MaxPool2d(*pool),
+      )
+
 
     def forward(self, x):
         """
@@ -52,7 +71,7 @@ class Detector(torch.nn.Module):
            Implement a forward pass through the network, use forward for training,
            and detect for detection
         """
-        raise NotImplementedError('Detector.forward')
+        return self.layers(x)
 
     def detect(self, image):
         """
@@ -67,8 +86,36 @@ class Detector(torch.nn.Module):
                  scalar. Otherwise pytorch might keep a computation graph in the background and your program will run
                  out of memory.
         """
-        raise NotImplementedError('Detector.detect')
+        detect_heatmap = self.forward(image)
+        detect_peak_1 = extract_peak(detect_heatmap[0][0], max_pool_ks=7, min_score=-5, max_det=30)
+        detect_peak_2 = extract_peak(detect_heatmap[0][1], max_pool_ks=7, min_score=-5, max_det=30)
+        detect_peak_3 = extract_peak(detect_heatmap[0][2], max_pool_ks=7, min_score=-5, max_det=30)
+        
+        detect_list_1 = []
+        for peak in detect_peak_1:
+            score = peak[0]
+            cx = peak[1]
+            cy = peak[2]
+            detect_tuple = (score, int(cx), int(cy), 0, 0)
+            detect_list_1.append(detect_tuple)
 
+        detect_list_2 = []
+        for peak in detect_peak_2:
+            score = peak[0]
+            cx = peak[1]
+            cy = peak[2]
+            detect_tuple = (score, int(cx), int(cy), 0, 0)
+            detect_list_2.append(detect_tuple)
+
+        detect_list_3 = []
+        for peak in detect_peak_3:
+            score = peak[0]
+            cx = peak[1]
+            cy = peak[2]
+            detect_tuple = (score, int(cx), int(cy), 0, 0)
+            detect_list_3.append(detect_tuple)
+        
+        return detect_list_1, detect_list_2, detect_list_3
 
 def save_model(model):
     from torch import save
