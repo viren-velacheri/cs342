@@ -118,15 +118,12 @@ class Detector(torch.nn.Module):
         z = (x - self.input_mean[None, :, None, None].to(x.device)) / self.input_std[None, :, None, None].to(x.device)
         up_activation = []
         for i in range(self.n_conv):
-            # Add all the information required for skip connections
             up_activation.append(z)
             z = self._modules['conv%d'%i](z)
 
         for i in reversed(range(self.n_conv)):
             z = self._modules['upconv%d'%i](z)
-            # Fix the padding
             z = z[:, :, :up_activation[i].size(2), :up_activation[i].size(3)]
-            # Add the skip connection
             if self.use_skip:
                 z = torch.cat([z, up_activation[i]], dim=1)
         return self.classifier(z) 
@@ -145,36 +142,27 @@ class Detector(torch.nn.Module):
                  scalar. Otherwise pytorch might keep a computation graph in the background and your program will run
                  out of memory.
         """
-        detect_heatmap = self.forward(image)
-        detect_peak_1 = extract_peak(detect_heatmap[0][0], max_pool_ks=7, min_score=-5, max_det=30)
-        detect_peak_2 = extract_peak(detect_heatmap[0][1], max_pool_ks=7, min_score=-5, max_det=30)
-        detect_peak_3 = extract_peak(detect_heatmap[0][2], max_pool_ks=7, min_score=-5, max_det=30)
+        heatmap = self.forward(image)
+        peaks_detect_1 = extract_peak(heatmap[0][0], max_det=30)
+        peaks_detect_2 = extract_peak(heatmap[0][1], max_det=30)
+        peaks_detect_3 = extract_peak(heatmap[0][2], max_det=30)
         
-        detect_list_1 = []
-        for peak in detect_peak_1:
-            score = peak[0]
-            cx = peak[1]
-            cy = peak[2]
-            detect_tuple = (score, int(cx), int(cy), 0, 0)
-            detect_list_1.append(detect_tuple)
+        peaks_detected_list1 = []
+        for peak in peaks_detect_1:
+            peak_tuple = (peak[0], peak[1], peak[2], 0, 0)
+            peaks_detected_list1.append(peak_tuple)
 
-        detect_list_2 = []
-        for peak in detect_peak_2:
-            score = peak[0]
-            cx = peak[1]
-            cy = peak[2]
-            detect_tuple = (score, int(cx), int(cy), 0, 0)
-            detect_list_2.append(detect_tuple)
+        peaks_detected_list2 = []
+        for peak in peaks_detect_2:
+            peak_tuple = (peak[0], peak[1], peak[2], 0, 0)
+            peaks_detected_list2.append(peak_tuple)
 
-        detect_list_3 = []
-        for peak in detect_peak_3:
-            score = peak[0]
-            cx = peak[1]
-            cy = peak[2]
-            detect_tuple = (score, int(cx), int(cy), 0, 0)
-            detect_list_3.append(detect_tuple)
+        peaks_detected_list3 = []
+        for peak in peaks_detect_3:
+            peak_tuple = (peak[0], peak[1], peak[2], 0, 0)
+            peaks_detected_list3.append(peak_tuple)
         
-        return detect_list_1, detect_list_2, detect_list_3
+        return peaks_detected_list1, peaks_detected_list2, peaks_detected_list3
 
 def save_model(model):
     from torch import save
