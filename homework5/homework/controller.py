@@ -1,4 +1,5 @@
 import pystk
+import numpy as np
 
 
 def control(aim_point, current_vel):
@@ -9,11 +10,9 @@ def control(aim_point, current_vel):
     :return: a pystk.Action (set acceleration, brake, steer, drift)
     """
     action = pystk.Action()
-    if current_vel < 11:
-      action.acceleration = 1
-    else:
-      action.acceleration = 0
-    action.steer = 0.25
+    action.acceleration = np.clip(20 - current_vel, 0, 1)
+    action.brake = False
+    action.steer = np.tanh(16 * aim_point[0])
     action.drift = False
 
     
