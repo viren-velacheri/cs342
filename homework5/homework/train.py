@@ -15,9 +15,9 @@ def train(args):
     model = Detector().to(device)
     lr = 1e-3
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-6)
-    loss = torch.nn.BCEWithLogitsLoss()
-    transformation = dense_transforms.Compose([dense_transforms.ColorJitter(0.9, 0.9, 0.9, 0.1), dense_transforms.RandomHorizontalFlip(), dense_transforms.ToTensor(), dense_transforms.ToHeatmap()])
-    train_data = load_detection_data('dense_data/train', num_workers=2, transform=transformation)
+    loss = torch.nn.MSELoss()
+    transformation = dense_transforms.Compose([dense_transforms.ColorJitter(0.9, 0.9, 0.9, 0.1), dense_transforms.RandomHorizontalFlip(), dense_transforms.ToTensor()])
+    train_data = load_detection_data('drive_data', num_workers=2, transform=transformation)
 
     global_step = 0
     num_epochs = 50
