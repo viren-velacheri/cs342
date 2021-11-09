@@ -10,16 +10,15 @@ def control(aim_point, current_vel):
     :return: a pystk.Action (set acceleration, brake, steer, drift)
     """
     action = pystk.Action()
+    # action.acceleration = np.clip(20 - current_vel, 0, 1)
+    # action.brake = False
+    # action.steer = np.tanh(16 * aim_point[0])
+    # action.drift = False
+
     action.acceleration = np.clip(20 - current_vel, 0, 1)
     action.brake = False
-    action.steer = np.tanh(16 * aim_point[0])
-    action.drift = False
-
-    
-    # config = pystk.RaceConfig()
-    # print(aim_point)
-    # action = pystk.Action()
-    # action = pystk.Action(10, 0, 1, True)
+    action.steer = np.tanh(30 * aim_point[0])
+    action.drift = 1 if abs(aim_point[0]) > 0.7 else 0
 
     """
     Your code here
@@ -28,24 +27,6 @@ def control(aim_point, current_vel):
     Hint: Use action.steer to turn the kart towards the aim_point, clip the steer angle to -1..1
     Hint: You may want to use action.drift=True for wide turns (it will turn faster)
     """
-    # config = pystk.RaceConfig()
-    # k = pystk.Race(config)
-    # state = pystk.WorldState()
-    # k.start()
-    # k.step()
-    # state.update()
-    # data = []
-    # current_action = 
-    # try:
-    #     for i in range(n_step):
-    #         x = torch.as_tensor(np.array(k.render_data[0].image))[None].permute(0,3,1,2).float()/255. - 0.5
-    #         # a = actor(x.to(device))[0]
-    #         k.step(pystk.Action(steer=float(a[0]), acceleration=float(a[1]), brake=float(a[2])>0.5))
-    #         state.update()
-    #         data.append( (np.array(k.render_data[0].image), (state.karts[0].distance_down_track)) )
-    # finally:
-    #     k.stop()
-    #     del k
 
     return action
 
