@@ -12,18 +12,18 @@ def train(args):
     if args.log_dir is not None:
         train_logger = tb.SummaryWriter(path.join(args.log_dir, 'train'))
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    model = Detector().to(device)
+    model = Planner().to(device)
     lr = 1e-3
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-6)
     loss = torch.nn.MSELoss()
     transformation = dense_transforms.Compose([dense_transforms.ColorJitter(0.9, 0.9, 0.9, 0.1), dense_transforms.RandomHorizontalFlip(), dense_transforms.ToTensor()])
-    train_data = load_detection_data('drive_data', num_workers=2, transform=transformation)
+    train_data = load_data('drive_data', num_workers=2, transform=transformation)
 
     global_step = 0
     num_epochs = 50
     for epoch in range(num_epochs):
         model.train()
-        for img, label, extra_val in train_data:
+        for img, label in train_data:
             img, label = img.to(device), label.to(device)
 
             logit = model(img)
