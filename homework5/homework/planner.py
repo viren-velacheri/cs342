@@ -38,7 +38,7 @@ class Planner(torch.nn.Module):
         def forward(self, x):
             return F.relu(self.c1(x))
 
-    def __init__(self, layers=[16, 32, 64, 128], n_class=3, kernel_size=3, use_skip=True):
+    def __init__(self, layers=[16, 32, 64, 128], n_class=1, kernel_size=3, use_skip=True):
         """
            Your code here.
            Setup your detection network
@@ -83,7 +83,9 @@ class Planner(torch.nn.Module):
             # Add the skip connection
             if self.use_skip:
                 z = torch.cat([z, up_activation[i]], dim=1)
-        return self.classifier(z), self.size(z)
+        z = self.classifier(z)
+        z = z.squeeze(1)
+        return spatial_argmax(z)
     # def __init__(self):
     #     super().__init__()
 
