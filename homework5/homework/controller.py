@@ -1,5 +1,6 @@
 import pystk
 import numpy as np
+import torch
 
 
 def control(aim_point, current_vel):
@@ -14,10 +15,14 @@ def control(aim_point, current_vel):
     # action.brake = False
     # action.steer = np.tanh(16 * aim_point[0])
     # action.drift = False
+    a = torch.tensor([20 - current_vel])
+    b = torch.tensor([30 * aim_point[0]])
 
-    action.acceleration = np.clip(20 - current_vel, 0, 1)
+    
+    action.acceleration = torch.clamp(a, 0, 1)
     action.brake = False
-    action.steer = np.tanh(30 * aim_point[0])
+
+    action.steer = torch.tanh(b)
     action.drift = 1 if abs(aim_point[0]) > 0.7 else 0
 
     """
