@@ -1,5 +1,4 @@
 import pystk
-import numpy as np
 import torch
 
 

@@ -84,7 +84,6 @@ class Planner(torch.nn.Module):
             if self.use_skip:
                 z = torch.cat([z, up_activation[i]], dim=1)
         z = self.classifier(z)
-        print(z.shape)
         z = z.squeeze(1)
         return spatial_argmax(z)
     # def __init__(self):
