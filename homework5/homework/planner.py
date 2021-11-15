@@ -83,25 +83,8 @@ class Planner(torch.nn.Module):
             # Add the skip connection
             if self.use_skip:
                 z = torch.cat([z, up_activation[i]], dim=1)
-        z = self.classifier(z)
-        z = z.squeeze(1)
+        z = self.classifier(z).squeeze(1)
         return spatial_argmax(z)
-    # def __init__(self):
-    #     super().__init__()
-
-    #     """
-    #     Your code here
-    #     """
-    #     raise NotImplementedError('Planner.__init__')
-
-    # def forward(self, img):
-    #     """
-    #     Your code here
-    #     Predict the aim point in image coordinate, given the supertuxkart image
-    #     @img: (B,3,96,128)
-    #     return (B,2)
-    #     """
-    #     raise NotImplementedError("Planner.forward")
 
 
 def save_model(model):
