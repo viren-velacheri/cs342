@@ -10,19 +10,20 @@ def control(aim_point, current_vel):
     :return: a pystk.Action (set acceleration, brake, steer, drift)
     """
     action = pystk.Action()
-    # action.acceleration = np.clip(20 - current_vel, 0, 1)
-    # action.brake = False
-    # action.steer = np.tanh(16 * aim_point[0])
-    # action.drift = False
-    a = torch.tensor([20 - current_vel])
-    b = torch.tensor([30 * aim_point[0]])
+    target_velocity = 22
+    a = torch.tensor([target_velocity - current_vel])
+    b = torch.tensor([15/aim_point[0]])
 
     
     action.acceleration = torch.clamp(a, 0, 1)
     action.brake = False
 
     action.steer = torch.tanh(b)
-    action.drift = 1 if abs(aim_point[0]) > 0.7 else 0
+    drift_threshold = 0.71
+    if abs(aim_point[0]) > drift_threshold:
+      action.drift = 1
+    else:
+      action.drift = 0
 
     """
     Your code here
